@@ -15,21 +15,52 @@ class Busquedas {
     };
   }
 
+  get paramsOpenWeather() {
+    return {
+      appid: process.env.OPENWEATHER_KEY,
+      units: "metric",
+      lang: "es",
+    };
+  }
+
   async ciudad(lugar = "") {
     try {
-      // TODO: Petición HTTP
       console.log("Iniciando búsqueda: ", lugar);
-
       const instance = axios.create({
         baseURL: `https://api.mapbox.com/geocoding/v5/mapbox.places/${lugar}.json`,
         params: this.paramsMapBox,
       });
-
       const resp = await instance.get();
-
-      console.log(resp.data);
-      return []; // Retornar las ciudades que coincida
+      return resp.data.features.map((lugar) => ({
+        id: lugar.id,
+        nombre: lugar.place_name,
+        lng: lugar.center[0],
+        lat: lugar.center[1],
+      }));
     } catch (error) {
+      return [];
+    }
+  }
+
+  async climaLugar(lat, lon) {
+    try {
+      const instance = axios.create({
+        baseURL: `https://api.openweathermap.org/data/2.5/weather`,
+        params: {
+          ...this.paramsOpenWeather,
+          lat,
+          lon,
+        },
+      });
+      const resp = await instance.get();
+      return {
+        desc: resp.data.weather[0].description,
+        min: resp.data.main.temp_min,
+        max: resp.data.main.temp_max,
+        temp: resp.data.main.temp,
+      };
+    } catch (error) {
+      console.log("ERROR: " + error);
       return [];
     }
   }
